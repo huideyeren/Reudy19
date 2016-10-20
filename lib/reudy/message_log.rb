@@ -12,34 +12,34 @@ module Gimite
       @fromNick = from_nick
       @body = body
     end
-  
+
     attr_accessor :fromNick,:body
   end
-  
+
   #発言ログ
   class MessageLog
     include Gimite
-    
+
     def initialize(inner_filename)
       @innerFileName = inner_filename
       @observers = []
       File.open(inner_filename) do |f|
-        @size = f.lines("\n---").count
+        @size = f.each_line("\n---").count
       end
     end
-  
+
     attr_accessor :size
-    
+
     #観察者を追加。
     def addObserver(*observers)
       @observers.concat(observers)
     end
-  
+
     #n番目の発言
     def [](n)
       n += @size if n < 0 #末尾からのインデックス
       File.open(@innerFileName) do |f|
-        line = f.lines("\n---").find{ f.lineno > n }
+        line = f.each_line("\n---").find{ f.lineno > n }
         if line && line != "\n---"
           m = YAML.load(line)
           return Message.new(m[:fromNick], m[:body])
@@ -48,7 +48,7 @@ module Gimite
         end
       end
     end
-    
+
     #発言を追加
     def addMsg(from_nick, body, to_outer = true)
       File.open(@innerFileName, "a") do |f|
@@ -57,9 +57,9 @@ module Gimite
       @size += 1
       @observers.each(&:onAddMsg)
     end
-   
+
     private
-    
+
     #内部データをクリア(デフォルトのログのみ残す)
     def clear
       File.open(@innerFileName, "w") do |f|
